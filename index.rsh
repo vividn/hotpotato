@@ -1,19 +1,64 @@
 'reach 0.1';
 
+
+const Player = {
+  hasPotato: Fun([], Null),
+  informTimeout: Fun([], Null),
+  waitForPass: Fun([], Null),
+}
+
+const informTimeout = () => {
+  each([Alice, Bob], () => {
+    interact.informTimeout();
+  });
+};
+
 export const main = Reach.App(() => {
   const A = Participant('Alice', {
-    // Specify Alice's interact interface here
+    ...Player,
+    wager: UInt,
   });
+
   const B = Participant('Bob', {
-    // Specify Bob's interact interface here
+    ...Player,
+    acceptWager: Fun([UInt], Null)
   });
   init();
-  // The first one to publish deploys the contract
-  A.publish();
+
+
+  // Alice makes a wager and then makes the contract
+  A.only(() => {
+    const wager = declassify(interact.wager)
+  })
+  A.publish(wager)
+    .pay(wager);
   commit();
-  // The second one to publish always attaches
-  B.publish();
+
+  // Bob needs to accept the wager
+  B.only(() => {
+    interact.acceptWager(wager);
+  })
+  B.pay(wager)
   commit();
+
+  const [ timeRemaining, keepGoing ] = makeDeadline(10);
+
+  invariant( balance() == 2 * wager );
+  while ( keepGoing() ) {
+    A.only(() => {
+      interact.waitForPass()
+    })
+    A.publish().timeout(timeRemaining(), () => closeTo(B, informTimeout))
+    commit()
+
+    B.only(() => {
+      interact.waitForPass()
+    })
+    B.publish().timeout(timeRemaining(), () => closeTo(A, informTimeout))
+    commit();
+
+    continue;
+  }
   // write your program here
   exit();
 });
