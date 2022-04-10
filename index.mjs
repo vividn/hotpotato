@@ -39,21 +39,19 @@ const stdlib = loadStdlib(process.env);
         console.log("Alice saw timeout")
       },
       waitForPass: async () => {
-        console.log("Alice has potato")
-        await setTimeout(console.log("Alice passes to Bob", 2000))
+        await setTimeout(() => console.log("Alice passes to Bob"), 2000);
       },
     }),
     backend.Bob(ctcBob, {
       ...stdlib.hasRandom,
       acceptWager: (amount) => {
-        console.log(`Bob accepts wager of ${amount}`)
+        console.log(`Bob accepts wager of ${fmt(amount)}`)
       },
       informTimeout: () => {
         console.log("Bob saw timeout")
       },
       waitForPass: async () => {
-        console.log("Bob has potato")
-        await setTimeout(console.log("Bob passes to Alice", 1000))
+        await setTimeout(() => console.log("Bob passes to Alice"), 1000);
       }
     }),
   ]);

@@ -44,13 +44,14 @@ export const main = Reach.App(() => {
   var AHasPotato = true;
   invariant( balance() == 2 * wager );
   while ( keepGoing() ) {
-    commit();
     if (AHasPotato) {
+      commit();
       A.only(() => {
         interact.waitForPass()
       })
       A.publish().timeout(timeRemaining(), () => closeTo(B, informTimeout))
     } else {
+      commit();
       B.only(() => {
         interact.waitForPass()
       })
