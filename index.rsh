@@ -4,18 +4,22 @@
 const Player = {
   informTimeout: Fun([], Null),
   waitForPass: Fun([], Null),
+  acceptWager: Fun([UInt], Null),
 }
 
 
 export const main = Reach.App(() => {
+  const Moderator = Participant('Moderator', {
+    ...hasRandom,
+    wager: UInt
+  })
+
   const A = Participant('Alice', {
     ...Player,
-    wager: UInt,
   });
   
   const B = Participant('Bob', {
     ...Player,
-    acceptWager: Fun([UInt], Null)
   });
   init();
   
@@ -25,21 +29,36 @@ export const main = Reach.App(() => {
     });
   };
 
+  // Moderator publishes the price to pay
+  Moderator.only(() => {
+    const wager = declassify(interact.wager);
+  });
+  Moderator.publish(wager);
+  commit();
+
   // Alice makes a wager and then makes the contract
   A.only(() => {
-    const wager = declassify(interact.wager)
+    interact.acceptWager(wager)
   })
-  A.publish(wager)
-    .pay(wager);
+  A.pay(wager);
   commit();
 
   // Bob needs to accept the wager
   B.only(() => {
     interact.acceptWager(wager);
   })
-  B.pay(wager)
+  B.pay(wager);
+  commit();
+
+  // Moderator creates a hidden timer
+  Moderator.only(() => {
+    const _timer = interact.random() % 10 + 5
+    const [_commitTimer, _saltTimer] = makeCommitment(interact, _timer);
+    const commitTimer = declassify(_commitTimer);
+  })
+  Moderator.publish(commitTimer);
   
-  const [ timeRemaining, keepGoing ] = makeDeadline(10);
+  const [ timeRemaining, keepGoing ] = makeDeadline(_timer);
   
   var AHasPotato = true;
   invariant( balance() == 2 * wager );
