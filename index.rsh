@@ -2,7 +2,6 @@
 
 
 const Player = {
-  hasPotato: Fun([], Null),
   informTimeout: Fun([], Null),
   waitForPass: Fun([], Null),
 }
