@@ -6,24 +6,24 @@ const Player = {
   waitForPass: Fun([], Null),
 }
 
-const informTimeout = () => {
-  each([Alice, Bob], () => {
-    interact.informTimeout();
-  });
-};
 
 export const main = Reach.App(() => {
   const A = Participant('Alice', {
     ...Player,
     wager: UInt,
   });
-
+  
   const B = Participant('Bob', {
     ...Player,
     acceptWager: Fun([UInt], Null)
   });
   init();
-
+  
+  const informTimeout = () => {
+    each([A, B], () => {
+      interact.informTimeout();
+    });
+  };
 
   // Alice makes a wager and then makes the contract
   A.only(() => {
@@ -38,26 +38,29 @@ export const main = Reach.App(() => {
     interact.acceptWager(wager);
   })
   B.pay(wager)
-  commit();
-
+  
   const [ timeRemaining, keepGoing ] = makeDeadline(10);
-
+  
+  var AHasPotato = true;
   invariant( balance() == 2 * wager );
   while ( keepGoing() ) {
-    A.only(() => {
-      interact.waitForPass()
-    })
-    A.publish().timeout(timeRemaining(), () => closeTo(B, informTimeout))
-    commit()
-
-    B.only(() => {
-      interact.waitForPass()
-    })
-    B.publish().timeout(timeRemaining(), () => closeTo(A, informTimeout))
     commit();
-
+    if (AHasPotato) {
+      A.only(() => {
+        interact.waitForPass()
+      })
+      A.publish().timeout(timeRemaining(), () => closeTo(B, informTimeout))
+    } else {
+      B.only(() => {
+        interact.waitForPass()
+      })
+      B.publish().timeout(timeRemaining(), () => closeTo(A, informTimeout));
+    }
+    AHasPotato = !AHasPotato
     continue;
   }
-  // write your program here
+  transfer(2 * wager).to(AHasPotato ? B : A)
+  commit();
+
   exit();
 });
